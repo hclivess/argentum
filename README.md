@@ -1,173 +1,128 @@
-Argentum integration/staging tree
-=====================================
+Argentum (ARG)
+==============
 
-[![Build Status](https://travis-ci.org/argentumproject/argentum.svg?branch=master)](https://travis-ci.org/argentumproject/argentum)
+Argentum is an experimental, open-source digital currency that enables instant
+peer-to-peer payments with no central authority. It is a fork of [Bitcoin Core](https://github.com/bitcoin/bitcoin)
+and supports six mining algorithms with merged-mining (AuxPoW) on Scrypt and SHA256D.
 
-http://www.argentum.io
+- Website: http://www.argentum.io
+- Releases / tags: https://github.com/argentumproject/argentum/tags
 
-What is Argentum?
-----------------
+Specifications
+--------------
 
-Argentum is an experimental digital currency that enables instant payments to
-anyone, anywhere in the world. Argentum uses peer-to-peer technology to operate
-with no central authority: managing transactions and issuing money are carried
-out collectively by the network. Argentum is the name of open source
-software which enables the use of this currency.
+| | |
+|---|---|
+| Block time | 45 seconds |
+| Block reward | 3 ARG |
+| Max block size | 10 MB |
+| Total supply | 64,000,000 ARG |
+| Mining algorithms | Scrypt, SHA256D, Lyra2RE2, Myr-Groestl, Argon2d, Yescrypt |
+| Merged mining (AuxPoW) | Scrypt, SHA256D |
 
 License
 -------
 
-Argentum is a fork of Bitcoin Core and inherits the terms of the MIT license. See 
-[COPYING](COPYING) for more information or see https://opensource.org/licenses/MIT.
+Argentum is released under the terms of the MIT license. See [COPYING](COPYING)
+or https://opensource.org/licenses/MIT.
 
-Development Process
--------------------
+Building from source
+--------------------
 
-The `master` branch is occasionally built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/argentumproject/argentum/tags) are created
-regularly to indicate new official, stable release versions of Argentum.
+Generic build instructions for Windows, macOS and Unix are in the [doc](doc) directory.
 
-The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
+This tree builds with a modern toolchain (GCC 13 / Clang, OpenSSL 3, Boost 1.83,
+BerkeleyDB 5.x, C++17). Quick start on Linux:
 
-Building
---------
-See files in the [doc](doc) directory for generic build instructions for Windows,
-OSX and Unix.
+```sh
+./autogen.sh
+./configure --with-incompatible-bdb --without-gui --enable-tests
+make -j"$(nproc)"
+```
 
-## Argentum Version 4.14.4.1
-- LOW_S and NULLFAIL are now mandatory
+See [MODERNIZATION.md](MODERNIZATION.md) for the toolchain notes.
 
-## Argentum Version 4.14.4
-- Speed up Initial Blockchain Download
+Development
+-----------
 
-## Argentum Version 4.14.3
-- Adds 4 new mining algorithms (Activates at block 2,977,000)
-	-Lyra2re2 (GPU)  
-	-Myr-Groestl (GPU/ASIC)  
-	-Argon2d (CPU)  
-	-Yescrypt (CPU/GPU)  
+The `master` branch is built and tested but is not guaranteed to be stable;
+tagged releases mark official stable versions. The contribution workflow is
+described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Argentum Version 4.14.2
-- These are just a few of the hundreds of enhancements with this new release
+Mining
+------
 
+Select the algorithm in `argentum.conf` (or pass `-algo=`):
+
+```
+algo=sha256d
+algo=scrypt
+algo=lyra2re2     # or: lyra2
+algo=groestl
+algo=argon2d      # or: argon
+algo=yescrypt
+```
+
+### Mining software
+
+| Algorithm | Software |
+|---|---|
+| Lyra2RE2 / Myr-Groestl (GPU, AMD) | [sgminer (nicehash)](https://github.com/nicehash/sgminer/releases), [sgminer (tpruvot)](https://github.com/tpruvot/sgminer/releases) |
+| Lyra2RE2 / Myr-Groestl (GPU, NVIDIA) | [ccminer (tpruvot)](https://github.com/tpruvot/ccminer/releases) |
+| Argon2d (CPU) | [cpuminer-opt](https://github.com/JayDDee/cpuminer-opt/releases), [unitus-cpuminer](https://github.com/unitusdev/unitus-cpuminer) |
+| Yescrypt (CPU/GPU) | [cpuminer-yescrypt](https://github.com/koto-dev/cpuminer-yescrypt/releases), [unitus-cpuminer](https://github.com/unitusdev/unitus-cpuminer), [sgminer (nicehash)](https://github.com/nicehash/sgminer/releases) |
+
+Merge-mining with Unitus (UIS) on Argon2d: see the
+[EasyMine guide](https://pimovietc.github.io/EasyMineGuides/Argentum/).
+
+P2Pool for Argentum: https://github.com/argentumproject/p2pool-argentum/
+
+Pools
+-----
+
+Pools known to support Argentum payouts (verify before use — availability changes):
+
+- [prohashing.com](https://prohashing.com) — Scrypt
+- [zpool.ca](http://www.zpool.ca/) — all but Argon2d
+- [zergpool.com](http://zergpool.com/) — Scrypt, Lyra2RE2
+- [blazepool.com](http://blazepool.com) — Myr-Groestl, Yescrypt, Scrypt, Lyra2RE2
+- [evil.ru](http://www.evil.ru/site/mining) — Yescrypt
+
+Scrypt merge-mining pool (no direct ARG payout): [litecoinpool.org](https://litecoinpool.org)
+
+Trading
+-------
+
+- [Bisq](http://bitsquare.io) — decentralized exchange
+- [SimpleSwap](https://www.simpleswap.io/)
+
+> Exchanges come and go; always confirm a venue is operating before sending funds.
+
+Changelog
+---------
+
+### Toolchain modernization
+- Builds on modern toolchains (GCC 13 / OpenSSL 3 / Boost 1.83 / C++17). See [MODERNIZATION.md](MODERNIZATION.md).
+
+### 4.14.4.1
+- `LOW_S` and `NULLFAIL` are now mandatory.
+
+### 4.14.4
+- Faster initial blockchain download.
+
+### 4.14.3
+- Adds 4 mining algorithms (activated at block 2,977,000): Lyra2RE2 (GPU),
+  Myr-Groestl (GPU/ASIC), Argon2d (CPU), Yescrypt (CPU/GPU).
+
+### 4.14.2
 - BIP112 (CheckSequenceVerify) soft fork
-- BIP146 Argentum will hard fork at block 2,977,000 (around March 13th 2018) to implement BIP146
-- Signature validation using libsecp256k1
-- Direct headers announcement (BIP 130)
-- Automatically use Tor hidden services
-- Notifications through ZMQ
-- BIP9 softfork deployment
+- BIP146 hard fork at block 2,977,000 (around March 13, 2018)
+- Signature validation via libsecp256k1
+- Direct headers announcement (BIP130)
+- Automatic Tor hidden services
+- ZMQ notifications
+- BIP9 soft-fork deployment
 - Linux ARM builds
-- Compact Block support (BIP 152)
-- Hierarchical Deterministic Key Generation (HD wallets)
-- Substantial improvments to the client load time. 
-
-## General
-### Six different mining algorithms
-- Scrypt AUXPoW (Merged Mining)
-- SHA256D AUXPoW (Merged Mining)
-- Lyra2re2 (GPU)
-- Myr-Groestl (GPU)
-- Argon2d (CPU)
-- Yescrypt (CPU)
-
-## Blocks
-- Max Block size 10mb
-- 45 Second block time
-- 3 Argentums per block
-
-## Currency Creation
-- 64 million Argentums will be created
-
-## Security
-- 6 independent mining algorithms
-
-## Mining Settings
-Use this to set the algorithm to SHA256D for mining (add to argentum.conf or use -algo=)  
-
-- algo=sha256d 
-- algo=lyra2re2 or lyra2 
-- algo=groestl 
-- algo=argon2d or argon 
-- algo=yescrypt 
-
-## Mining 
-### Lyra2re2 / Myriad-Groestl (GPU)
-- AMD: - https://github.com/nicehash/sgminer/releases or https://github.com/tpruvot/sgminer/releases
-- NVIDIA: - https://github.com/tpruvot/ccminer/releases or Cryptodredge https://bitcointalk.org/index.php?topic=4129696
-- You might be able to get a hashrate increase using this Myriad-Groestl kernel with SGMINER https://bitcointalk.org/index.php?topic=1211739.0
-
-### Argon2d (CPU)
-- Try this first https://github.com/JayDDee/cpuminer-opt/releases
-- https://github.com/unitusdev/unitus-cpuminer
-- Setup guide to merge mine with UIS https://pimovietc.github.io/EasyMineGuides/Argentum/
-
-### Yescrypt
-- https://github.com/unitusdev/unitus-cpuminer
-- https://github.com/nicehash/sgminer/releases
-- https://github.com/koto-dev/cpuminer-yescrypt/releases
-
-### P2Pool (All Algorithms)
-- https://github.com/argentumproject/p2pool-argentum/
-
-- Point your miner to:
-- Argon2d 
-  144.202.80.45:9552
-  HashingSpace:
-  Singapore: arg-argon2d-sg.hashing.space
-  Dallas, Texas: arg-argon2d-tx.hashing.space
-  Seattle Washington: arg-argon2d-wa.hashing.space
-- Myr-groestl 45.77.210.177:9553 
-- Yescrypt 45.76.112.155:9554
-- Lyra 45.76.240.8:9557
-
-- for USA 
-- http://p2p-usa.xyz:9557/static/ - LYRA2RE2
-- http://p2p-usa.xyz:9552/static/ - ARGON2D
-- http://p2p-usa.xyz:9554/static/ - YESCRYPT
-- http://p2p-usa.xyz:9553/static/ - GROESTL
-
-for EU   
-- http://p2p-south.xyz:9557/static/ - LYRA2RE2 
-- http://p2p-south.xyz:9552/static/ - ARGON2D 
-- http://p2p-south.xyz:9554/static/ - YESCRYPT 
-- http://p2p-south.xyz:9553/static/ - GROESTL 
-
-- http://p2p-spb.xyz:9557/static/ - LYRA2RE2 
-- http://p2p-spb.xyz:9552/static/ - ARGON2D 
-- http://p2p-spb.xyz:9554/static/ - YESCRYPT 
-- http://p2p-spb.xyz:9553/static/ - GROESTL 
-
-
-## Known pools (*with Argentum Payout*)
-- https://prohashing.com (Scrypt)
-- http://blockmunch.club/ (SHA256)
-- http://www.zpool.ca/ (all but Argon2d)
-- http://poolovich.pro/ (Myriad-Groestl)
-- http://zergpool.com/ (Scrypt, Lyra2rev2)
-- http://pool.hashrefinery.com/ (Scrypt, Yescrypt, Lyra2rev2, Myr-Groestl)
-- http://blazepool.com (Myriad-Groestl, Yescrypt, Scrypt, Lyra2rev2) 
-- https://hashing.space/argentum (Argon2d)
-- https://argentum.easymine.online/start (Argon2d, merge mining with UIS-Unitus) 
-- http://www.evil.ru/site/mining (Yescrypt)  
-- https://algopools.com (All algorithms)
-
-## Pools without Argentum payout
-- https://litecoinpool.org
-
-## Trading
-- https://LocalBitcoinCash.org  
-- http://bitsquare.io  
-- https://www.cryptopia.co.nz/Exchange/?market=ARG_BTC  
-- https://www.coinexchange.io/market/ARG/BTC  
-- https://novaexchange.com/market/BTC_ARG/  
-- https://www.simpleswap.io/  
-
-## Bootstrap
-- https://electrum-arg.org/bootstrap.dat  
-- sha256 checksum 37020ed0abe02d7bf97a9dde7de0419d278f88866ff9d67419492d2be0dd32db
-
-- https://electrum-arg.org/bootstrap.zip  
-
-November 1, 2017
-Block 2,723,638
+- Compact block support (BIP152)
+- Hierarchical Deterministic (HD) wallets
+- Faster client load time
