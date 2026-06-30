@@ -56,7 +56,10 @@ case $host in
   ;;
 esac
 dnl Require C++11 compiler (no GNU extensions)
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory], [nodefault])
+dnl Modern Boost (>= ~1.85, e.g. Homebrew 1.90) requires C++14, and the code
+dnl already compiles cleanly at C++14/17. C++14 (not 17) keeps std::random_shuffle
+dnl etc. available and is the highest standard this macro version supports.
+AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory], [nodefault])
 dnl Check if -latomic is required for <std::atomic>
 CHECK_ATOMIC
 
