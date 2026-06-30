@@ -27,14 +27,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libtool autotools-dev automake pkg-config bsdmainutils \
-            libssl-dev libevent-dev libboost-all-dev libdb-dev libdb++-dev libminiupnpc-dev
+            libssl-dev libevent-dev libboost-all-dev libdb-dev libdb++-dev libminiupnpc-dev \
+            qtbase5-dev qttools5-dev qttools5-dev-tools libqrencode-dev libprotobuf-dev protobuf-compiler
 
-      - name: Build
+      - name: Build (daemon required, GUI best-effort)
         run: |
           ./autogen.sh
-          ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+          ./configure --with-gui=qt5 --with-incompatible-bdb --disable-tests --disable-bench \
             CXXFLAGS="-O2"
-          make -j"$(nproc)"
+          make -j"$(nproc)" src/argentumd src/argentum-cli src/argentum-tx
+          make -j"$(nproc)" src/qt/argentum-qt || echo "::warning::Linux Qt GUI build failed; shipping daemon only"
 
       - name: Stage binaries
         run: |
@@ -43,6 +45,9 @@ jobs:
             cp "src/$b" dist/argentum-linux-x86_64/
             strip "dist/argentum-linux-x86_64/$b"
           done
+          if [ -f src/qt/argentum-qt ]; then
+            cp src/qt/argentum-qt dist/argentum-linux-x86_64/ && strip dist/argentum-linux-x86_64/argentum-qt
+          fi
           cp README.md COPYING dist/argentum-linux-x86_64/ 2>/dev/null || true
           ./src/argentumd --version | head -1
 
@@ -74,17 +79,24 @@ jobs:
             mingw-w64-x86_64-libevent
             mingw-w64-x86_64-db
             mingw-w64-x86_64-miniupnpc
+            mingw-w64-x86_64-qt5-base
+            mingw-w64-x86_64-qt5-tools
+            mingw-w64-x86_64-qrencode
+            mingw-w64-x86_64-protobuf
 
-      - name: Build
+      - name: Build (daemon required, GUI best-effort)
         run: |
           ./autogen.sh
           # MSYS2 ships BerkeleyDB as db_cxx and Boost under /mingw64; the old
           # AX_BOOST_* macros need explicit path hints to find them.
-          ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+          ./configure --with-gui=qt5 --with-incompatible-bdb --disable-tests --disable-bench \
             --with-boost=/mingw64 --with-boost-libdir=/mingw64/lib \
             BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" \
             CXXFLAGS="-O2"
-          make -j"$(nproc)"
+          # Daemon/CLI must build (release-critical):
+          make -j"$(nproc)" src/argentumd.exe src/argentum-cli.exe src/argentum-tx.exe
+          # GUI is best-effort so a Qt-bundling hiccup never blocks the release:
+          make -j"$(nproc)" src/qt/argentum-qt.exe || echo "::warning::Windows Qt GUI build failed; shipping daemon only"
 
       - name: Bundle runtime DLLs (self-contained)
         run: |
@@ -93,10 +105,28 @@ jobs:
             cp "src/$b.exe" dist/argentum-windows-x86_64/
             strip "dist/argentum-windows-x86_64/$b.exe"
           done
+          # Qt GUI (only if it built — best-effort)
+          if [ -f src/qt/argentum-qt.exe ]; then
+            cp src/qt/argentum-qt.exe dist/argentum-windows-x86_64/
+            strip dist/argentum-windows-x86_64/argentum-qt.exe
+          fi
           # Copy every mingw64 DLL the binaries link against, next to the .exes.
           for b in dist/argentum-windows-x86_64/*.exe; do
             ldd "$b" | awk '/\/mingw64\/bin\// {print $3}'
           done | sort -u | while read -r dll; do cp -n "$dll" dist/argentum-windows-x86_64/; done
+          # Qt plugins are loaded at runtime (ldd can't see them): copy the
+          # platform/styles/imageformats plugins and their own DLL deps.
+          if [ -f dist/argentum-windows-x86_64/argentum-qt.exe ]; then
+            QTPLUGINS="$(qmake-qt5 -query QT_INSTALL_PLUGINS 2>/dev/null || echo /mingw64/share/qt5/plugins)"
+            for sub in platforms styles imageformats; do
+              if [ -d "$QTPLUGINS/$sub" ]; then
+                mkdir -p "dist/argentum-windows-x86_64/$sub"
+                cp "$QTPLUGINS/$sub"/*.dll "dist/argentum-windows-x86_64/$sub/" 2>/dev/null || true
+                for p in "$QTPLUGINS/$sub"/*.dll; do ldd "$p" 2>/dev/null | awk '/\/mingw64\/bin\// {print $3}'; done \
+                  | sort -u | while read -r dll; do cp -n "$dll" dist/argentum-windows-x86_64/; done
+              fi
+            done
+          fi
           cp README.md COPYING dist/argentum-windows-x86_64/ 2>/dev/null || true
           ls -la dist/argentum-windows-x86_64/
 
