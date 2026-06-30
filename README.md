@@ -40,7 +40,7 @@ BerkeleyDB 5.x, C++17). Quick start on Linux:
 make -j"$(nproc)"
 ```
 
-See [MODERNIZATION.md](MODERNIZATION.md) for the toolchain notes.
+See [MODERNIZATION.md](doc/MODERNIZATION.md) for the toolchain notes.
 
 Development
 -----------
@@ -102,7 +102,7 @@ Changelog
 ---------
 
 ### Toolchain modernization
-- Builds on modern toolchains (GCC 13 / OpenSSL 3 / Boost 1.83 / C++17). See [MODERNIZATION.md](MODERNIZATION.md).
+- Builds on modern toolchains (GCC 13 / OpenSSL 3 / Boost 1.83 / C++17). See [MODERNIZATION.md](doc/MODERNIZATION.md).
 
 ### 4.14.4.1
 - `LOW_S` and `NULLFAIL` are now mandatory.

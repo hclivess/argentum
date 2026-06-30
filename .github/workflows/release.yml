@@ -1,0 +1,185 @@
+name: Build & Release
+
+# Builds self-contained daemon/CLI binaries for Linux, Windows and macOS and,
+# when a v* tag is pushed, attaches them to a GitHub Release.
+#
+# Windows uses MSYS2/MinGW64 and macOS uses the native runner + Homebrew, so the
+# (legacy, broken) depends/ tree is not involved on any platform.
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------- Linux
+  linux:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libtool autotools-dev automake pkg-config bsdmainutils \
+            libssl-dev libevent-dev libboost-all-dev libdb-dev libdb++-dev libminiupnpc-dev
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+            CXXFLAGS="-O2"
+          make -j"$(nproc)"
+
+      - name: Stage binaries
+        run: |
+          mkdir -p dist/argentum-linux-x86_64
+          for b in argentumd argentum-cli argentum-tx; do
+            cp "src/$b" dist/argentum-linux-x86_64/
+            strip "dist/argentum-linux-x86_64/$b"
+          done
+          cp README.md COPYING dist/argentum-linux-x86_64/ 2>/dev/null || true
+          ./src/argentumd --version | head -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: argentum-linux-x86_64
+          path: dist/argentum-linux-x86_64
+
+  # ---------------------------------------------------------------- Windows
+  windows:
+    name: Windows x86_64 (MSYS2)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel git autoconf automake libtool pkgconf
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libevent
+            mingw-w64-x86_64-db
+            mingw-w64-x86_64-miniupnpc
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          # MSYS2 ships BerkeleyDB as db_cxx; point configure at it explicitly.
+          ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+            BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" \
+            CXXFLAGS="-O2"
+          make -j"$(nproc)"
+
+      - name: Bundle runtime DLLs (self-contained)
+        run: |
+          mkdir -p dist/argentum-windows-x86_64
+          for b in argentumd argentum-cli argentum-tx; do
+            cp "src/$b.exe" dist/argentum-windows-x86_64/
+            strip "dist/argentum-windows-x86_64/$b.exe"
+          done
+          # Copy every mingw64 DLL the binaries link against, next to the .exes.
+          for b in dist/argentum-windows-x86_64/*.exe; do
+            ldd "$b" | awk '/\/mingw64\/bin\// {print $3}'
+          done | sort -u | while read -r dll; do cp -n "$dll" dist/argentum-windows-x86_64/; done
+          cp README.md COPYING dist/argentum-windows-x86_64/ 2>/dev/null || true
+          ls -la dist/argentum-windows-x86_64/
+
+      - name: Verify self-contained (mingw64 off PATH)
+        run: |
+          export PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/mingw64' | paste -sd: -)"
+          cd dist/argentum-windows-x86_64
+          out="$(./argentumd.exe --version 2>&1 || true)"
+          echo "$out" | head -1
+          echo "$out" | grep -qi "Argentum"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: argentum-windows-x86_64
+          path: dist/argentum-windows-x86_64
+
+  # ---------------------------------------------------------------- macOS
+  macos:
+    name: macOS (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install automake libtool pkg-config boost openssl@3 berkeley-db@5 libevent miniupnpc dylibbundler || true
+
+      - name: Build
+        run: |
+          export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig"
+          ./autogen.sh
+          ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+            BDB_CFLAGS="-I$(brew --prefix berkeley-db@5)/include" \
+            BDB_LIBS="-L$(brew --prefix berkeley-db@5)/lib -ldb_cxx" \
+            CXXFLAGS="-O2"
+          make -j"$(sysctl -n hw.ncpu)"
+
+      - name: Stage + bundle dylibs (self-contained)
+        run: |
+          mkdir -p dist/argentum-macos-arm64
+          for b in argentumd argentum-cli argentum-tx; do
+            cp "src/$b" dist/argentum-macos-arm64/
+            # Rewrite Homebrew dylib references to @loader_path and copy them in,
+            # so the binaries run on a Mac without Homebrew installed.
+            dylibbundler -od -b -x "dist/argentum-macos-arm64/$b" \
+              -d dist/argentum-macos-arm64/libs -p @loader_path/libs/ || true
+          done
+          cp README.md COPYING dist/argentum-macos-arm64/ 2>/dev/null || true
+          ./src/argentumd --version | head -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: argentum-macos-arm64
+          path: dist/argentum-macos-arm64
+
+  # ---------------------------------------------------------------- Release
+  release:
+    name: Publish release
+    needs: [ linux, windows, macos ]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package per-platform archives + checksums
+        run: |
+          cd artifacts
+          for d in */; do
+            name="${d%/}"
+            if [[ "$name" == *windows* ]]; then
+              (cd "$name" && zip -r "../${name}.zip" .) ;
+            else
+              tar czf "${name}.tar.gz" "$name"
+            fi
+          done
+          sha256sum *.tar.gz *.zip 2>/dev/null | tee SHA256SUMS.txt
+          ls -la
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.tar.gz
+            artifacts/*.zip
+            artifacts/SHA256SUMS.txt
+          generate_release_notes: true
