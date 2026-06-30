@@ -109,7 +109,13 @@ AC_DEFUN([AX_BOOST_SYSTEM],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the boost_system library!)
+                # Boost >= 1.69 made Boost.System header-only, and recent Boost
+                # (e.g. 1.90 on Homebrew, MSYS2) no longer ships a libboost_system
+                # to link against. The compile/link test above already passed, so
+                # treat it as header-only rather than failing the configure.
+                BOOST_SYSTEM_LIB=""
+                AC_SUBST(BOOST_SYSTEM_LIB)
+                link_system="yes"
             fi
 			if test "x$link_system" = "xno"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)
