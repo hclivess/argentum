@@ -134,8 +134,7 @@ double GetPeakHashrate (const CBlockIndex* blockindex, int algo) {
 	    hashes_bn = CBigNum(0);
 	    break;
 	  }
-	  //LogPrintf("j=%d add block work of block %lu\n",j,pprev_algo->nHeight);
-	  hashes_bn += CBigNum(ArithToUint256(GetBlockProofBase(*pprev_algo)));	  
+	  hashes_bn += CBigNum(ArithToUint256(GetBlockProofBase(*pprev_algo)));
 	}
 	const CBlockIndex * pprev_algo_time = GetPrevBlockIndexForAlgo(pprev_algo,-1);
 	if (pprev_algo_time) {
@@ -158,9 +157,7 @@ double GetPeakHashrate (const CBlockIndex* blockindex, int algo) {
 	else {
 	  return std::numeric_limits<double>::max();
 	}
-	//LogPrintf("hashes = %f, time = %f\n",(double)hashes_bn.getulong(),(double)time_f);
 	double hashes = (hashes_bn/time_f).getuint256().getdouble();
-	//LogPrintf("hashes per sec = %f\n",hashes);
 	if (hashes>hashes_peak) hashes_peak = hashes;
       }
       return hashes_peak;

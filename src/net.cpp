@@ -1024,13 +1024,11 @@ bool CConnman::AttemptToEvictConnection()
 }
 
 void CConnman::AcceptConnection(const ListenSocket& hListenSocket) {
-  LogPrint("net","CConnman:AcceptConnection started\n");
     struct sockaddr_storage sockaddr;
     socklen_t len = sizeof(sockaddr);
     SOCKET hSocket = accept(hListenSocket.socket, (struct sockaddr*)&sockaddr, &len);
     CAddress addr;
     int nInbound = 0;
-    LogPrint("net","nMaxConnections = %d, nMaxOutbound = %d, nMaxFeeler = %d\n",nMaxConnections,nMaxOutbound,nMaxFeeler);
     int nMaxInbound = nMaxConnections - (nMaxOutbound + nMaxFeeler);
 
     if (hSocket != INVALID_SOCKET)
@@ -1047,7 +1045,6 @@ void CConnman::AcceptConnection(const ListenSocket& hListenSocket) {
 
     if (hSocket == INVALID_SOCKET)
     {
-      LogPrint("net","CConnman::AcceptConnection: hSocket == INVALID_SOCKET\n");
         int nErr = WSAGetLastError();
         if (nErr != WSAEWOULDBLOCK)
             LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
@@ -1085,7 +1082,6 @@ void CConnman::AcceptConnection(const ListenSocket& hListenSocket) {
 
     if (nInbound >= nMaxInbound)
     {
-      LogPrint("net","nInbound (%d) >= nMaxInbound (%d)\n",nInbound,nMaxInbound);
         if (!AttemptToEvictConnection()) {
             // No connection to evict, disconnect the new connection
 	  LogPrint("net", "failed to find an eviction candidate - connection dropped (full) (addr %s)\n",addr.ToString());

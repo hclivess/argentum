@@ -259,7 +259,6 @@ void PushNodeVersion(CNode *pnode, CConnman& connman, int64_t nTime)
 }
 
 void InitializeNode(CNode *pnode, CConnman& connman) {
-  LogPrint("net","InitializeNode started\n");
     CAddress addr = pnode->addr;
     std::string addrName = pnode->GetAddrName();
     NodeId nodeid = pnode->GetId();
@@ -268,7 +267,6 @@ void InitializeNode(CNode *pnode, CConnman& connman) {
         mapNodeState.emplace_hint(mapNodeState.end(), std::piecewise_construct, std::forward_as_tuple(nodeid), std::forward_as_tuple(addr, std::move(addrName)));
     }
     if(!pnode->fInbound) {
-      LogPrint("net","InitializeNode: PushNodeVersion\n");
         PushNodeVersion(pnode, connman, GetTime());
     }
 }
