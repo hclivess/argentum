@@ -43,7 +43,7 @@ std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of 
 struct IteratorComparator
 {
     template<typename I>
-    bool operator()(const I& a, const I& b)
+    bool operator()(const I& a, const I& b) const
     {
         return &(*a) < &(*b);
     }
@@ -2726,7 +2726,7 @@ public:
         mp = _mempool;
     }
 
-    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
+    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b) const
     {
         /* As std::make_heap produces a max-heap, we want the entries with the
          * fewest ancestors/highest fee to sort later. */
