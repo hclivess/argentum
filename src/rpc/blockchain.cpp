@@ -1724,10 +1724,15 @@ UniValue getblockspacing(const JSONRPCRequest& request)
 	    "}\n"
 			    );
 
+    // getblockspacing reads chainActive[height] and GetAverageBlockSpacing walks
+    // the block index, so hold cs_main for the whole body to avoid racing a
+    // concurrent block connect / reorg.
+    LOCK(cs_main);
+
     int algo = -1;
     int interval = 25;
     CBlockIndex * blockindex = NULL;
-    
+
     if (request.params.size()>0) {
       algo = request.params[0].get_int();
       if (request.params.size()>1) {

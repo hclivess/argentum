@@ -122,6 +122,12 @@ CTranslationInterface translationInterface;
 int miningAlgo = 0;
 
 /** Init OpenSSL library multithreading support */
+// OpenSSL < 1.1.0 required the application to supply a locking callback for
+// thread safety. OpenSSL >= 1.1.0 is internally thread-safe and removed this
+// API (CRYPTO_num_locks / CRYPTO_set_locking_callback), so the machinery below
+// is compiled only for legacy OpenSSL. (Argentum's depends/ tree still pins a
+// 1.0.x OpenSSL; the system build uses 3.0.)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static CCriticalSection** ppmutexOpenSSL;
 void locking_callback(int mode, int i, const char* file, int line) NO_THREAD_SAFETY_ANALYSIS
 {
@@ -131,6 +137,7 @@ void locking_callback(int mode, int i, const char* file, int line) NO_THREAD_SAF
         LEAVE_CRITICAL_SECTION(*ppmutexOpenSSL[i]);
     }
 }
+#endif
 
 // Init
 class CInit
@@ -138,7 +145,8 @@ class CInit
 public:
     CInit()
     {
-        // Init OpenSSL library multithreading support
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+        // Init OpenSSL library multithreading support (legacy OpenSSL only)
         ppmutexOpenSSL = (CCriticalSection**)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(CCriticalSection*));
         for (int i = 0; i < CRYPTO_num_locks(); i++)
             ppmutexOpenSSL[i] = new CCriticalSection();
@@ -150,6 +158,7 @@ public:
         // or corrupt. Explicitly tell OpenSSL not to try to load the file. The result for our libs will be
         // that the config appears to have been loaded and there are no modules/engines available.
         OPENSSL_no_config();
+#endif
 
 #ifdef WIN32
         // Seed OpenSSL PRNG with current contents of the screen
@@ -161,6 +170,7 @@ public:
     }
     ~CInit()
     {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         // Securely erase the memory used by the PRNG
         RAND_cleanup();
         // Shutdown OpenSSL library multithreading support
@@ -168,6 +178,7 @@ public:
         for (int i = 0; i < CRYPTO_num_locks(); i++)
             delete ppmutexOpenSSL[i];
         OPENSSL_free(ppmutexOpenSSL);
+#endif
     }
 }
 instance_of_cinit;

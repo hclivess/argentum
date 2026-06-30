@@ -541,11 +541,16 @@ UniValue chaindynamics(const JSONRPCRequest& request)
 	    "}\n"
         );
 
+    // chaindynamics reads chainActive and walks the block-index graph (pprev),
+    // so hold cs_main for the whole body to avoid a data race / use-after-free
+    // against a concurrent block connect or reorg.
+    LOCK(cs_main);
+
     CBlockIndex * pindex = 0;
     if (request.params.size()>0) {
       int height = request.params[0].get_int();
       pindex = chainActive[height];
-    }    
+    }
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("difficulty SHA256D",    (double)GetDifficulty(pindex,ALGO_SHA256D,true)));
