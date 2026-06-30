@@ -120,6 +120,11 @@ jobs:
     # The x86_64 binary still runs on Apple Silicon Macs via Rosetta 2.
     name: macOS x86_64 (Intel)
     runs-on: macos-13
+    # GitHub's Intel macOS runners are scarce/queue heavily; don't let a macOS
+    # queue/timeout block the Linux+Windows release. macOS artifacts are attached
+    # whenever the job does succeed.
+    continue-on-error: true
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -163,7 +168,9 @@ jobs:
   # ---------------------------------------------------------------- Release
   release:
     name: Publish release
-    needs: [ linux, windows, macos ]
+    # Don't block the release on macOS (its Intel runner can queue indefinitely);
+    # require Linux + Windows, attach whatever macOS artifact exists.
+    needs: [ linux, windows ]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     steps:
