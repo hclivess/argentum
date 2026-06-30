@@ -431,10 +431,14 @@ public:
         nDefaultPort = 18445;
         nPruneAfterHeight = 1000;
 
-        // genesis = CreateGenesisBlock(1296688602, 4, 0x207fffff, 2, 1000 * COIN);
-        // consensus.hashGenesisBlock = genesis.GetHash();
-        // assert(consensus.hashGenesisBlock == uint256S("0x63b92987ddc93808aa33dddc80b3e52948bdfffaf2420bf4cd9c5137b54ea37c"));
-        // assert(genesis.hashMerkleRoot == uint256S("0x3f75db3c18e92f46c21530dc1222e1fddf4ccebbf88e289a6c9dc787fd6469da"));
+        // Regtest genesis. nNonce=4 already satisfies the (trivial) regtest PoW
+        // target for the scrypt algo selected by nVersion=2. The hash/merkle
+        // root below were computed from Argentum's genesis coinbase (the
+        // Snowden timestamp), so they differ from upstream Bitcoin's values.
+        genesis = CreateGenesisBlock(1296688602, 4, 0x207fffff, 2, 1000 * COIN);
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x77a9b10a77dfb556839e7b5f3b20a5240bb6306c0429f01ceea831ccde0eec9c"));
+        assert(genesis.hashMerkleRoot == uint256S("0x2e886425adb642fea51a0b7ca7949b3228e2abeea8aea4ac147682a8a57bd05c"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
@@ -446,7 +450,7 @@ public:
 
         checkpointData = (CCheckpointData){
             boost::assign::map_list_of
-            ( 0, uint256S("0x63b92987ddc93808aa33dddc80b3e52948bdfffaf2420bf4cd9c5137b54ea37c"))
+            ( 0, uint256S("0x77a9b10a77dfb556839e7b5f3b20a5240bb6306c0429f01ceea831ccde0eec9c"))
         };
 
         chainTxData = ChainTxData{

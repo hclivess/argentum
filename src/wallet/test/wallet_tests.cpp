@@ -380,7 +380,11 @@ BOOST_FIXTURE_TEST_CASE(rescan, TestChain100Setup)
         LOCK(wallet.cs_wallet);
         wallet.AddKeyPubKey(coinbaseKey, coinbaseKey.GetPubKey());
         BOOST_CHECK_EQUAL(oldTip, wallet.ScanForWalletTransactions(oldTip));
-        BOOST_CHECK_EQUAL(wallet.GetImmatureBalance(), 2000 * COIN);
+        // Argentum's block subsidy is 0 for these low regtest heights, so we
+        // can't assert on the immature balance like upstream Bitcoin. Instead
+        // verify the scan picked up the coinbase transactions from both the old
+        // and the new block file (2 blocks: oldTip and newTip).
+        BOOST_CHECK_EQUAL(wallet.mapWallet.size(), 2U);
     }
 
     // Prune the older block file.
@@ -394,7 +398,9 @@ BOOST_FIXTURE_TEST_CASE(rescan, TestChain100Setup)
         LOCK(wallet.cs_wallet);
         wallet.AddKeyPubKey(coinbaseKey, coinbaseKey.GetPubKey());
         BOOST_CHECK_EQUAL(newTip, wallet.ScanForWalletTransactions(oldTip));
-        BOOST_CHECK_EQUAL(wallet.GetImmatureBalance(), 1000 * COIN);
+        // After pruning the old block file, only the new block's coinbase
+        // transaction can be read back, so exactly one tx is picked up.
+        BOOST_CHECK_EQUAL(wallet.mapWallet.size(), 1U);
     }
 
     // Verify importmulti RPC returns failure for a key whose creation time is
@@ -478,10 +484,13 @@ BOOST_FIXTURE_TEST_CASE(importwallet_rescan, TestChain100Setup)
         ::importwallet(request);
 
         BOOST_CHECK_EQUAL(wallet.mapWallet.size(), 3);
-        BOOST_CHECK_EQUAL(coinbaseTxns.size(), 103);
+        // TestChain100Setup mines COINBASE_MATURITY blocks before this test
+        // adds 3 more, so the indices of the newly-added blocks (whose
+        // timestamps are >= the imported key birthday) start at COINBASE_MATURITY.
+        BOOST_CHECK_EQUAL(coinbaseTxns.size(), (size_t)COINBASE_MATURITY + 3);
         for (size_t i = 0; i < coinbaseTxns.size(); ++i) {
             bool found = wallet.GetWalletTx(coinbaseTxns[i].GetHash());
-            bool expected = i >= 100;
+            bool expected = i >= (size_t)COINBASE_MATURITY;
             BOOST_CHECK_EQUAL(found, expected);
         }
     }

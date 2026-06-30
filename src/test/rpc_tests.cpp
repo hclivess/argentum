@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(rpc_rawsign)
     r = CallRPC(std::string("createrawtransaction ")+prevout+" "+
       "{\"AXv2N6i59S5ZbTrceXYKEih5Xf7XGqxpc6\":11}");
     std::string notsigned = r.get_str();
-    std::string privkey1 = "\"TPs4Zfq8VCtw6xKAAo48m88Tb2kVtqYrFRxNfeYpddmSai8A9ELk\"";
+    std::string privkey1 = "\"PQD38K6qm4ADnyxREkQ2GRaJsJKtMYEDrW8rZPCGNiRDymmW3Bc9\"";
     std::string privkey2 = "\"PUSCgb5KQBUP73SG5j6VMyRPTAXpiZBPC7D5WiQYvKz97N9cXUQK\"";
     r = CallRPC(std::string("signrawtransaction ")+notsigned+" "+prevout+" "+"[]");
     BOOST_CHECK(find_value(r.get_obj(), "complete").get_bool() == false);
@@ -254,14 +254,14 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     ar = r.get_array();
     BOOST_CHECK_EQUAL(ar.size(), 0);
 
-    BOOST_CHECK_NO_THROW(r = CallRPC(std::string("setban 127.0.0.0/24 add 1607731200 true")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(std::string("setban 127.0.0.0/24 add 9907731200 true")));
     BOOST_CHECK_NO_THROW(r = CallRPC(std::string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
     UniValue banned_until = find_value(o1, "banned_until");
     BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/24");
-    BOOST_CHECK_EQUAL(banned_until.get_int64(), 1607731200); // absolute time check
+    BOOST_CHECK_EQUAL(banned_until.get_int64(), 9907731200); // absolute time check (far future so SweepBanned keeps it)
 
     BOOST_CHECK_NO_THROW(CallRPC(std::string("clearbanned")));
 
