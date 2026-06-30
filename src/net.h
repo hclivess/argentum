@@ -23,6 +23,8 @@
 
 #include <atomic>
 #include <deque>
+#include <functional>
+#include <list>
 #include <stdint.h>
 #include <thread>
 #include <memory>

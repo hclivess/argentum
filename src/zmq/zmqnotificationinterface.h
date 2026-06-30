@@ -7,6 +7,7 @@
 
 #include "validationinterface.h"
 #include <string>
+#include <list>
 #include <map>
 
 class CBlockIndex;

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <list>
 #include <map>
 #include <set>
 #include <stdexcept>

@@ -13,6 +13,7 @@
 #include <boost/function.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <boost/thread.hpp>
+#include <functional>
 #include <map>
 
 //
