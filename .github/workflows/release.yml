@@ -95,12 +95,17 @@ jobs:
           # AX_BOOST_* macros need explicit path hints to find them.
           # --with-gui=auto never hard-fails; give explicit Qt paths so MSYS2's
           # Qt5 (headers under /mingw64/include/qt5) is detected and the GUI builds.
+          # MSYS2's Qt5 headers live under /mingw64/include/qt5/<Module>; put those
+          # dirs on CPPFLAGS so the configure header probes (QtCore/qglobal.h etc.)
+          # resolve. moc/uic come from --with-qt-bindir.
+          QT5_INC=/mingw64/include/qt5
           ./configure --with-gui=auto --with-incompatible-bdb --disable-tests --disable-bench \
             --with-boost=/mingw64 --with-boost-libdir=/mingw64/lib \
-            --with-qt-incdir=/mingw64/include/qt5 --with-qt-libdir=/mingw64/lib \
+            --with-qt-incdir="$QT5_INC" --with-qt-libdir=/mingw64/lib \
             --with-qt-bindir=/mingw64/bin --with-qt-plugindir=/mingw64/share/qt5/plugins \
             BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" \
-            CXXFLAGS="-O2"
+            CXXFLAGS="-O2" \
+            CPPFLAGS="-I$QT5_INC -I$QT5_INC/QtCore -I$QT5_INC/QtGui -I$QT5_INC/QtWidgets -I$QT5_INC/QtNetwork -I$QT5_INC/QtDBus -I$QT5_INC/QtTest"
           # -k keeps building the daemon even if the GUI fails; then assert the
           # release-critical binaries exist (GUI is bundled later only if present).
           make -k -j"$(nproc)" || echo "::warning::some targets failed (likely the GUI)"
