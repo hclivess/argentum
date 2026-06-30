@@ -23,6 +23,7 @@ bool WinShutdownMonitor::nativeEventFilter(const QByteArray &eventType, void *pM
        MSG *pMsg = static_cast<MSG *>(pMessage);
 
        // Seed OpenSSL PRNG with Windows event data (e.g.  mouse movements and other user interactions)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
        if (RAND_event(pMsg->message, pMsg->wParam, pMsg->lParam) == 0) {
             // Warn only once as this is performance-critical
             static bool warned = false;
@@ -31,6 +32,15 @@ bool WinShutdownMonitor::nativeEventFilter(const QByteArray &eventType, void *pM
                 warned = true;
             }
        }
+#else
+       // RAND_event() was removed in OpenSSL 1.1; feed the event data into the PRNG directly.
+       const UINT message = pMsg->message;
+       const WPARAM wParam = pMsg->wParam;
+       const LPARAM lParam = pMsg->lParam;
+       RAND_add(&message, sizeof(message), 0.0);
+       RAND_add(&wParam, sizeof(wParam), 0.0);
+       RAND_add(&lParam, sizeof(lParam), 0.0);
+#endif
 
        switch(pMsg->message)
        {

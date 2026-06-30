@@ -30,6 +30,9 @@
 
 #include <boost/foreach.hpp>
 
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
+
 WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *_wallet, OptionsModel *_optionsModel, QObject *parent) :
     QObject(parent), wallet(_wallet), optionsModel(_optionsModel), addressTableModel(0),
     transactionTableModel(0),

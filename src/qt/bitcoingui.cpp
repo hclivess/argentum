@@ -62,6 +62,9 @@
 #include <QUrl>
 #else
 #include <QUrlQuery>
+
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #endif
 
 const std::string BitcoinGUI::DEFAULT_UIPLATFORM =
