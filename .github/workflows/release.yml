@@ -35,8 +35,10 @@ jobs:
           ./autogen.sh
           ./configure --with-gui=qt5 --with-incompatible-bdb --disable-tests --disable-bench \
             CXXFLAGS="-O2"
-          make -j"$(nproc)" src/argentumd src/argentum-cli src/argentum-tx
-          make -j"$(nproc)" src/qt/argentum-qt || echo "::warning::Linux Qt GUI build failed; shipping daemon only"
+          # -k keeps building the daemon even if the GUI fails; then assert the
+          # release-critical binaries exist (GUI is bundled later only if present).
+          make -k -j"$(nproc)" || echo "::warning::some targets failed (likely the GUI)"
+          test -f src/argentumd && test -f src/argentum-cli && test -f src/argentum-tx
 
       - name: Stage binaries
         run: |
@@ -93,10 +95,10 @@ jobs:
             --with-boost=/mingw64 --with-boost-libdir=/mingw64/lib \
             BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" \
             CXXFLAGS="-O2"
-          # Daemon/CLI must build (release-critical):
-          make -j"$(nproc)" src/argentumd.exe src/argentum-cli.exe src/argentum-tx.exe
-          # GUI is best-effort so a Qt-bundling hiccup never blocks the release:
-          make -j"$(nproc)" src/qt/argentum-qt.exe || echo "::warning::Windows Qt GUI build failed; shipping daemon only"
+          # -k keeps building the daemon even if the GUI fails; then assert the
+          # release-critical binaries exist (GUI is bundled later only if present).
+          make -k -j"$(nproc)" || echo "::warning::some targets failed (likely the GUI)"
+          test -f src/argentumd.exe && test -f src/argentum-cli.exe && test -f src/argentum-tx.exe
 
       - name: Bundle runtime DLLs (self-contained)
         run: |
