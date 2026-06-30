@@ -78,8 +78,10 @@ jobs:
       - name: Build
         run: |
           ./autogen.sh
-          # MSYS2 ships BerkeleyDB as db_cxx; point configure at it explicitly.
+          # MSYS2 ships BerkeleyDB as db_cxx and Boost under /mingw64; the old
+          # AX_BOOST_* macros need explicit path hints to find them.
           ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+            --with-boost=/mingw64 --with-boost-libdir=/mingw64/lib \
             BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" \
             CXXFLAGS="-O2"
           make -j"$(nproc)"
@@ -126,10 +128,15 @@ jobs:
         run: |
           export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig"
           ./autogen.sh
+          # Homebrew Boost isn't on the default search path the old AX_BOOST_*
+          # macros probe, so point --with-boost at it explicitly.
           ./configure --without-gui --with-incompatible-bdb --disable-tests --disable-bench \
+            --with-boost="$(brew --prefix boost)" \
+            --with-boost-libdir="$(brew --prefix boost)/lib" \
             BDB_CFLAGS="-I$(brew --prefix berkeley-db@5)/include" \
             BDB_LIBS="-L$(brew --prefix berkeley-db@5)/lib -ldb_cxx" \
-            CXXFLAGS="-O2"
+            CXXFLAGS="-O2 -I$(brew --prefix boost)/include" \
+            LDFLAGS="-L$(brew --prefix boost)/lib"
           make -j"$(sysctl -n hw.ncpu)"
 
       - name: Stage + bundle dylibs (self-contained)
