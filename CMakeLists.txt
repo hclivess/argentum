@@ -176,13 +176,16 @@ endfunction()
 # and pubkey.cpp use) is built with its own autotools. Reuse a prebuilt static
 # archive if configure/make already produced one; otherwise build it through
 # ExternalProject. On Windows use the system package.
-if(WIN32)
-    find_path(SECP256K1_INCLUDE_DIR secp256k1.h)
-    find_library(SECP256K1_LIBRARY NAMES secp256k1 REQUIRED)
+find_path(SECP256K1_INCLUDE_DIR secp256k1.h)
+find_library(SECP256K1_LIBRARY NAMES secp256k1)
+if(SECP256K1_LIBRARY AND SECP256K1_INCLUDE_DIR)
+    message(STATUS "secp256k1: system ${SECP256K1_LIBRARY}")
     add_library(secp256k1 INTERFACE)
     target_include_directories(secp256k1 INTERFACE ${SECP256K1_INCLUDE_DIR})
     target_link_libraries(secp256k1 INTERFACE ${SECP256K1_LIBRARY})
 else()
+    # No system libsecp256k1 (e.g. MSYS2): build the vendored copy via its own
+    # autotools (works on mingw too), same as the reuse-or-build path below.
     set(SECP_A ${SRC}/secp256k1/.libs/libsecp256k1.a)
     if(EXISTS ${SECP_A})
         message(STATUS "secp256k1: reusing prebuilt ${SECP_A}")
