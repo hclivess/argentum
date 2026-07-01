@@ -15,6 +15,18 @@ find_package(Qt5 QUIET COMPONENTS DBus LinguistTools)
 # src/config/bitcoin-config.h already reflects whether ./configure found them
 # (USE_QRCODE). We honor those here so the GUI matches the autotools build.
 find_package(Protobuf REQUIRED)
+# Modern protobuf (>=22, e.g. MSYS2 protobuf 35) depends on Abseil. FindProtobuf's
+# Protobuf_LIBRARIES omits it; shared Linux libprotobuf.so auto-chains absl, but
+# mingw needs it explicit. Pull the full link line (incl. absl) from pkg-config.
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(PROTOBUF_PKG QUIET protobuf)
+endif()
+if(PROTOBUF_PKG_LDFLAGS)
+    set(PROTOBUF_LINK ${PROTOBUF_PKG_LDFLAGS})
+else()
+    set(PROTOBUF_LINK ${Protobuf_LIBRARIES})
+endif()
 find_library(QRENCODE_LIBRARY NAMES qrencode)
 
 set(CMAKE_AUTOMOC ON)
@@ -168,7 +180,7 @@ target_compile_definitions(argentum-qt PRIVATE QT_NO_KEYWORDS)
 target_link_libraries(argentum-qt PRIVATE
     ${ARGENTUM_LINK_LIBS}
     Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network
-    ${Protobuf_LIBRARIES})
+    ${PROTOBUF_LINK})
 
 if(QRENCODE_LIBRARY)
     target_link_libraries(argentum-qt PRIVATE ${QRENCODE_LIBRARY})
