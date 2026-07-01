@@ -515,6 +515,8 @@ std::string LicenseInfo()
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
+           strprintf(_("Modernized build and multi-platform packaging by %s."), "hclivess") + "\n" +
+           "\n" +
            strprintf(_("Please contribute if you find %s useful. "
                        "Visit %s for further information about the software."),
                PACKAGE_NAME, URL_WEBSITE) +
