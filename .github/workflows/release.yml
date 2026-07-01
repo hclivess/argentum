@@ -51,6 +51,10 @@ jobs:
           done
           if [ -f src/qt/argentum-qt ]; then
             cp src/qt/argentum-qt dist/argentum-linux-x86_64/ && strip dist/argentum-linux-x86_64/argentum-qt
+            # also expose the Linux Qt GUI as its own package (parallel to the Windows one)
+            mkdir -p dist/argentum-qt-linux-x86_64
+            cp dist/argentum-linux-x86_64/argentum-qt dist/argentum-qt-linux-x86_64/
+            cp README.md COPYING dist/argentum-qt-linux-x86_64/ 2>/dev/null || true
           fi
           cp README.md COPYING dist/argentum-linux-x86_64/ 2>/dev/null || true
           ./src/argentumd --version | head -1
@@ -59,6 +63,12 @@ jobs:
         with:
           name: argentum-linux-x86_64
           path: dist/argentum-linux-x86_64
+
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('dist/argentum-qt-linux-x86_64/argentum-qt') != ''
+        with:
+          name: argentum-qt-linux-x86_64
+          path: dist/argentum-qt-linux-x86_64
 
   # ---------------------------------------------------------------- Windows
   windows:
