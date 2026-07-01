@@ -243,7 +243,9 @@ jobs:
             --with-boost=/mingw64 --with-boost-libdir=/mingw64/lib \
             BDB_CFLAGS="-I/mingw64/include" BDB_LIBS="-ldb_cxx" || true
           test -f src/config/bitcoin-config.h
-          cmake -S . -B build-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          # Unix Makefiles (not Ninja): the vendored secp256k1 is built via an
+          # ExternalProject whose "$(MAKE)" command Ninja rejects as a bad $-escape.
+          cmake -S . -B build-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
             -DWITH_QT_GUI=ON -DUSE_SYSTEM_LEVELDB=ON -DWITH_DAEMON=OFF
           cmake --build build-cmake -j"$(nproc)" --target argentum-qt
           test -f build-cmake/argentum-qt.exe
