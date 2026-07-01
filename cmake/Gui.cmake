@@ -147,6 +147,10 @@ if(WIN32)
     list(APPEND QT_GUI_SOURCES ${SRC}/qt/winshutdownmonitor.cpp)
     enable_language(RC)
     list(APPEND QT_GUI_SOURCES ${SRC}/qt/res/bitcoin-qt-res.rc)
+    # windres can't preprocess the real C++ in clientversion.h; that header
+    # guards those bits behind WINDRES_PREPROC, so define it for the .rc compile.
+    set_source_files_properties(${SRC}/qt/res/bitcoin-qt-res.rc
+        PROPERTIES COMPILE_DEFINITIONS "WINDRES_PREPROC")
 endif()
 
 add_executable(argentum-qt WIN32 ${QT_GUI_SOURCES})
