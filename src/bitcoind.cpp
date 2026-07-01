@@ -125,7 +125,7 @@ bool AppInit(int argc, char* argv[])
 
         if (fCommandLine)
         {
-            fprintf(stderr, "Error: There is no RPC client functionality in argentumd anymore. Use the bitcoin-cli utility instead.\n");
+            fprintf(stderr, "Error: There is no RPC client functionality in argentumd anymore. Use the argentum-cli utility instead.\n");
             exit(EXIT_FAILURE);
         }
         // -server defaults to true for bitcoind but not for the GUI so do this here

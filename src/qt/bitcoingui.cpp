@@ -901,7 +901,7 @@ void BitcoinGUI::message(const QString &title, const QString &message, unsigned 
             break;
         }
     }
-    // Append title to "Bitcoin - "
+    // Append title to "Argentum - "
     if (!msgType.isEmpty())
         strTitle += " - " + msgType;
 
